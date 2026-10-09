@@ -1,5 +1,6 @@
 package com.reloop.backend.item;
 
+import com.reloop.backend.advice.Advice;
 import com.reloop.backend.domain.Category;
 import com.reloop.backend.domain.ItemCondition;
 import com.reloop.backend.domain.Recommendation;
@@ -26,5 +27,6 @@ public final class ItemDtos {
     public record ItemDto(Long id, String code, Category category, String brand, String model,
                           ItemCondition condition, double weightKg, String description, String photoUrl,
                           Recommendation recommendation,
+                          Advice advice,
                           Long pickupId, String pickupCode, Instant createdAt) {}
 }
