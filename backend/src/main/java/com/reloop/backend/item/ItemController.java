@@ -58,4 +58,13 @@ public class ItemController {
 
         return service.update(user, id, request);
     }
+
+    // Generate advice for an item owned by the authenticated citizen
+    @PostMapping("/{id}/advice")
+    public ItemDto advice(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id) {
+
+        return service.generateAdvice(user, id);
+    }
 }
