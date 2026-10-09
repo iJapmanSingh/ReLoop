@@ -3,19 +3,37 @@ import Button from "../common/Button.jsx";
 
 function LogoMark() {
   return (
-    <span className="grid size-9 place-items-center rounded-xl bg-ink-900">
+    <span className="relative grid size-10 shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700 shadow-lg shadow-teal-900/20">
       <svg
-        viewBox="0 0 24 24"
-        className="size-5 text-teal-600"
+        viewBox="0 0 40 40"
+        className="size-7"
         fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
       >
-        <path d="M20 12a8 8 0 1 1-2.34-5.66" />
-        <path d="M20 4v4h-4" />
+        <path
+          d="M29.5 13.5A12 12 0 1 0 31 24"
+          stroke="white"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        <path
+          d="M25 8.5L31 13.5L24 17"
+          stroke="white"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M14 25C14 18 21 16 27 16C26 23 22 29 14 29"
+          fill="#BBF7D0"
+        />
+        <path
+          d="M14 29L22 21"
+          stroke="#047857"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
       </svg>
     </span>
   );
@@ -31,10 +49,23 @@ export default function PublicNavbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
       <nav aria-label="Main" className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2.5 rounded-lg">
-          <LogoMark />
-          <span className="text-lg font-semibold tracking-tight text-ink-900">ReLoop</span>
-        </Link>
+        <Link
+  to="/"
+  aria-label="ReLoop home"
+  className="group flex items-center gap-3 rounded-xl"
+>
+  <LogoMark />
+
+  <span className="flex flex-col">
+    <span className="text-xl font-extrabold tracking-tight text-ink-900">
+      Re<span className="text-teal-600">Loop</span>
+    </span>
+
+    <span className="-mt-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-ink-500">
+      E-waste, reimagined
+    </span>
+  </span>
+</Link>
 
         <ul className="hidden items-center gap-7 md:flex">
           {navLinks.map((link) => (
