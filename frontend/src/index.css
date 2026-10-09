@@ -1,35 +1,41 @@
 @import "tailwindcss";
 
-/* ReLoop design tokens. Each --color-* variable becomes a Tailwind class,
-   such as bg-navy-900 or text-teal-600. */
+/* Design tokens: defined once, reused everywhere.
+   Tailwind v4 turns each --color-* into a class, e.g. bg-ink-900, text-teal-700. */
 @theme {
-  --color-navy-900: #0f172a;
-  --color-navy-700: #334155;
-  --color-navy-500: #64748b;
-  --color-surface: #f8fafc;
-  --color-white: #ffffff;
+  --font-sans: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  --color-teal-600: #0f766e;
-  --color-teal-100: #ccfbf1;
+  --color-ink-900: #0b1220;   /* headings, primary text */
+  --color-ink-700: #334155;   /* body text */
+  --color-ink-500: #64748b;   /* secondary text */
+  --color-canvas: #f6f8fa;    /* page background */
+  --color-surface: #ffffff;   /* cards, navbar */
+  --color-line: #e2e8f0;      /* borders */
 
-  --color-amber-600: #b45309;
-  --color-amber-100: #fef3c7;
-  --color-blue-600: #1d4ed8;
-  --color-blue-100: #dbeafe;
-  --color-red-600: #b91c1c;
-  --color-red-100: #fee2e2;
+  --color-teal-600: #0d9488;  /* sustainability accent */
+  --color-teal-700: #0f766e;  /* primary buttons */
+  --color-teal-50: #f0fdfa;
 
-  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
-  --radius-card: 0.75rem;
+  --color-amber-600: #b45309; /* pending / needs attention */
+  --color-amber-50: #fffbeb;
+  --color-blue-700: #1d4ed8;  /* in progress */
+  --color-blue-50: #eff6ff;
+  --color-red-700: #b91c1c;   /* errors */
+  --color-red-50: #fef2f2;
+
+  --shadow-soft: 0 1px 2px rgb(11 18 32 / 0.04), 0 6px 20px rgb(11 18 32 / 0.06);
 }
 
-/* Base styles apply to the whole page. */
 @layer base {
   body {
-    margin: 0;
-    font-family: var(--font-sans);
-    color: var(--color-navy-900);
-    background-color: var(--color-surface);
-    -webkit-font-smoothing: antialiased;
+    @apply bg-canvas font-sans text-ink-700 antialiased;
+  }
+
+  h1, h2, h3 {
+    @apply text-ink-900 font-semibold tracking-tight;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-teal-600;
   }
 }
