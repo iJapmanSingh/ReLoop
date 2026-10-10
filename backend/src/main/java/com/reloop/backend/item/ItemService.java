@@ -10,6 +10,7 @@ import com.reloop.backend.item.ItemDtos.ItemDto;
 import com.reloop.backend.item.ItemDtos.ItemRequest;
 import com.reloop.backend.advice.Advice;
 import com.reloop.backend.advice.AdviceService;
+import com.reloop.backend.repo.PickupRequestRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,7 @@ import static java.nio.file.Files.write;
 public class ItemService {
 
     private final ItemRepository items;
+    private final PickupRequestRepository pickups;
     private final AdviceService adviceService;
     private final ObjectMapper mapper;
 
@@ -59,19 +61,14 @@ public class ItemService {
     }
 
     // Update an existing item belonging to the authenticated user
-    public ItemDto update(User owner, Long id, ItemRequest request) {
-        Item item = owned(owner, id);
-
-        apply(item, request);
-
-        // Item details changed, so any previous recommendation is stale.
-        item.setRecommendation(null);
-        item.setAdviceJson(null);
-
-        Item savedItem = items.save(item);
-
-
-        return toDto(savedItem);
+    public ItemDto update(User owner, Long id, ItemRequest r) {
+        Item i = owned(owner, id);
+        if (pickups.findFirstByItemOrderByCreatedAtDesc(i).isPresent())
+            throw new ApiException(HttpStatus.CONFLICT, "This item already has a pickup request and can't be edited");
+        apply(i, r);
+        i.setRecommendation(null); // details changed, so old advice is stale
+        i.setAdviceJson(null);
+        return toDto(items.save(i));
     }
 
     // Generate and save rule-based advice for an owned item
@@ -112,24 +109,15 @@ public class ItemService {
     }
 
     // Convert the database entity into an API response DTO
-    private ItemDto toDto(Item item) {
-        return new ItemDto(
-                item.getId(),
-                item.getCode(),
-                item.getCategory(),
-                item.getBrand(),
-                item.getModel(),
-                item.getItemCondition(),
-                item.getWeightKg(),
-                item.getDescription(),
-                item.getPhotoUrl(),
-                item.getRecommendation(),
-                read(item.getAdviceJson()),
-                null, // pickupId: pickup feature will be added later
-                null, // pickupCode: pickup feature will be added later
-                item.getCreatedAt()
-        );
+    private ItemDto toDto(Item i) {
+        var p = pickups.findFirstByItemOrderByCreatedAtDesc(i).orElse(null);
+        return new ItemDto(i.getId(), i.getCode(), i.getCategory(), i.getBrand(), i.getModel(),
+                i.getItemCondition(), i.getWeightKg(), i.getDescription(), i.getPhotoUrl(),
+                i.getRecommendation(), read(i.getAdviceJson()),
+                p == null ? null : p.getStatus(), p == null ? null : p.getId(),
+                p == null ? null : p.getCode(), i.getCreatedAt());
     }
+
     // Convert the advice object into JSON for database storage
     private String write(Advice advice) {
         try {

@@ -3,6 +3,7 @@ package com.reloop.backend.item;
 import com.reloop.backend.advice.Advice;
 import com.reloop.backend.domain.Category;
 import com.reloop.backend.domain.ItemCondition;
+import com.reloop.backend.domain.PickupStatus;
 import com.reloop.backend.domain.Recommendation;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,7 +27,6 @@ public final class ItemDtos {
     /** status/pickupId/pickupCode come from the item's latest pickup (null if none yet). */
     public record ItemDto(Long id, String code, Category category, String brand, String model,
                           ItemCondition condition, double weightKg, String description, String photoUrl,
-                          Recommendation recommendation,
-                          Advice advice,
-                          Long pickupId, String pickupCode, Instant createdAt) {}
+                          Recommendation recommendation, Advice advice,
+                          PickupStatus status, Long pickupId, String pickupCode, Instant createdAt) {}
 }
