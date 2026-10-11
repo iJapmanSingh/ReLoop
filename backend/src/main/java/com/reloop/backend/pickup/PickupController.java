@@ -25,6 +25,11 @@ public class PickupController {
         return service.create(u, r);
     }
 
+    /** Lets the request form offer "hand over with your next delivery" only where a partner serves the pincode. */
+    @GetMapping("/partner-availability")
+    @PreAuthorize("hasRole('CITIZEN')")
+    public PartnerAvailability partnerAvailability(@RequestParam String pincode) { return service.partnerAvailability(pincode); }
+
     @GetMapping("/mine")
     @PreAuthorize("hasRole('CITIZEN')")
     public List<PickupDto> mine(@AuthenticationPrincipal User u) { return service.mine(u); }

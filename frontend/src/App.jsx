@@ -15,6 +15,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import MyItems from './pages/MyItems';
 import MyPickups from './pages/MyPickups';
 import CitizenFacilities, { PublicFacilities } from './pages/Facilities';
+import Rewards from './pages/Rewards';
 import Soon from './pages/Soon';
 
 function Guard({ role, children }) {
@@ -38,6 +39,7 @@ const citizenRoutes = (
     <Route path="items" element={<MyItems />} />
     <Route path="pickups" element={<MyPickups />} />
     <Route path="facilities" element={<CitizenFacilities />} />
+    <Route path="rewards" element={<Rewards />} />
     <Route path="items/new" element={<AddItem />} />
     <Route path="items/:id" element={<ItemAdvice />} />
     <Route path="items/:id/pickup" element={<RequestPickup />} />

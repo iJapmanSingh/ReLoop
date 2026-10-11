@@ -18,18 +18,21 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        seed("Admin", "admin@ewaste.app", "Admin@123", Role.ADMIN, "+91 90000 00000", "Bengaluru", "560001", null, true);
-        seed("Ravi Kumar", "ravi@greenloop.in", "Collector@123", Role.COLLECTOR, "+91 90000 01234", "Bengaluru", "560038", "GreenLoop Collection", true);
-        seed("Ananya Rao", "ananya.rao@example.com", "Citizen@123", Role.CITIZEN, "+91 90000 05678", "Bengaluru", "560038", null, false);
+        seed("Admin", "admin@ewaste.app", "Admin@123", Role.ADMIN, "+91 90000 00000", "Bengaluru", "560001", null, true, false);
+        seed("Ravi Kumar", "ravi@greenloop.in", "Collector@123", Role.COLLECTOR, "+91 90000 01234", "Bengaluru", "560038", "GreenLoop Collection", true, false);
+        seed("Ananya Rao", "ananya.rao@example.com", "Citizen@123", Role.CITIZEN, "+91 90000 05678", "Bengaluru", "560038", null, false, false);
+        // demo last-mile delivery partner (proposed Amazon partnership) serving the same pincode as the demo citizen
+        seed("Suresh Yadav", "suresh@delivery-partner.demo", "Partner@123", Role.COLLECTOR, "+91 90000 07777",
+                "Bengaluru", "560038", "Amazon Delivery Partner (proposed pilot)", true, true);
     }
 
     private void seed(String name, String email, String pw, Role role, String phone,
-                      String city, String pin, String org, boolean verified) {
+                      String city, String pin, String org, boolean verified, boolean deliveryPartner) {
         if (users.existsByEmail(email)) return;
         User u = new User();
         u.setName(name); u.setEmail(email); u.setPasswordHash(encoder.encode(pw));
         u.setRole(role); u.setPhone(phone); u.setCity(city); u.setPincode(pin);
-        u.setOrganization(org); u.setVerified(verified);
+        u.setOrganization(org); u.setVerified(verified); u.setDeliveryPartner(deliveryPartner);
         users.save(u);
     }
 }

@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface StatusHistoryRepository extends JpaRepository<StatusHistory, Long> {
     List<StatusHistory> findByPickupOrderByChangedAtAsc(PickupRequest pickup);
+    List<StatusHistory> findByStatus(PickupStatus status);
 }
