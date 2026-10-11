@@ -6,10 +6,35 @@ services:
       POSTGRES_DB: ewaste
       POSTGRES_USER: ewaste
       POSTGRES_PASSWORD: ewaste
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reloop-backend
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/ewaste
+      DB_USER: ewaste
+      DB_PASSWORD: ewaste
+      JWT_SECRET: ${JWT_SECRET:-reloop-super-secret-jwt-token-key-2026-production}
+      SEED_DEMO: "true"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: reloop-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
 
 volumes:
   pgdata:
