@@ -3,12 +3,13 @@ services:
     image: postgres:16-alpine
     container_name: reloop-db
     environment:
-      POSTGRES_DB: ewaste
-      POSTGRES_USER: ewaste
-      POSTGRES_PASSWORD: ewaste
+      POSTGRES_DB: ${POSTGRES_DB:-ewaste}
+      POSTGRES_USER: ${POSTGRES_USER:-ewaste}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
+    # Notice: No host ports exposed. PostgreSQL is only reachable by backend within the internal docker network.
 
   backend:
     build:
@@ -16,11 +17,11 @@ services:
       dockerfile: Dockerfile
     container_name: reloop-backend
     environment:
-      DB_URL: jdbc:postgresql://db:5432/ewaste
-      DB_USER: ewaste
-      DB_PASSWORD: ewaste
-      JWT_SECRET: ${JWT_SECRET:-reloop-super-secret-jwt-token-key-2026-production}
-      SEED_DEMO: "true"
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-ewaste}
+      DB_USER: ${POSTGRES_USER:-ewaste}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      SEED_DEMO: ${SEED_DEMO:-true}
     depends_on:
       - db
     restart: unless-stopped
