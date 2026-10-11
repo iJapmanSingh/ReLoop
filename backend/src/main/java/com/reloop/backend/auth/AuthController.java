@@ -37,10 +37,12 @@ public class AuthController {
     public record LoginRequest(@NotBlank String email, @NotBlank String password) {}
 
     public record UserDto(Long id, String name, String email, Role role, String phone,
-                          String city, String pincode, String organization, boolean verified) {
+                          String city, String pincode, String organization, boolean verified,
+                          boolean deliveryPartner, int creditBalance) {
         public static UserDto of(User u) {
             return new UserDto(u.getId(), u.getName(), u.getEmail(), u.getRole(), u.getPhone(),
-                    u.getCity(), u.getPincode(), u.getOrganization(), u.isVerified());
+                    u.getCity(), u.getPincode(), u.getOrganization(), u.isVerified(),
+                    u.isDeliveryPartner(), u.getCreditBalance());
         }
     }
 

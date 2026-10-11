@@ -12,15 +12,13 @@ import com.reloop.backend.advice.Advice;
 import com.reloop.backend.advice.AdviceService;
 import com.reloop.backend.repo.PickupRequestRepository;
 
+import com.reloop.backend.credits.CreditService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
-import static java.lang.module.ModuleDescriptor.read;
-import static java.nio.file.Files.write;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +29,7 @@ public class ItemService {
     private final PickupRequestRepository pickups;
     private final AdviceService adviceService;
     private final ObjectMapper mapper;
+    private final CreditService credits;
 
     // Create a new item for the authenticated user
     public ItemDto create(User owner, ItemRequest request) {
@@ -115,7 +114,7 @@ public class ItemService {
                 i.getItemCondition(), i.getWeightKg(), i.getDescription(), i.getPhotoUrl(),
                 i.getRecommendation(), read(i.getAdviceJson()),
                 p == null ? null : p.getStatus(), p == null ? null : p.getId(),
-                p == null ? null : p.getCode(), i.getCreatedAt());
+                p == null ? null : p.getCode(), i.getCreatedAt(), credits.estimate(i));
     }
 
     // Convert the advice object into JSON for database storage

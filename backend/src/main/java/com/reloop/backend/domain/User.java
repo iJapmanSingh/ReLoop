@@ -24,4 +24,10 @@ public class User {
     // collectors only
     private String organization;
     private boolean verified;
+    /** Collectors only: last-mile delivery partner who adds e-waste pickups to an existing delivery route (proposed Amazon partnership). */
+    @Column(columnDefinition = "boolean default false")
+    private boolean deliveryPartner;
+    /** Citizens: current ReLoop credit balance (the ledger is CreditTransaction). */
+    @Column(columnDefinition = "integer default 0")
+    private int creditBalance;
 }

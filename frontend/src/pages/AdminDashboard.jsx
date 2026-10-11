@@ -48,6 +48,25 @@ export default function AdminDashboard() {
         <StatCard label="Items recycled" value={s.itemsRecycled} note="One item per completed pickup" />
         <StatCard label="Total pickup requests" value={s.totalRequests} note="All four lifecycle statuses" />
       </div>
+
+      <div className="grid sm:grid-cols-3 gap-4">
+        <StatCard
+          label="Delivery-partner pickups"
+          value={s.partnerPickups || 0}
+          note="Collected on existing delivery routes (proposed pilot)"
+        />
+        <StatCard
+          label="Credits issued"
+          value={(s.creditsIssued || 0).toLocaleString()}
+          note="Awarded to citizens upon RECYCLED stage"
+        />
+        <StatCard
+          label="Credits redeemed"
+          value={(s.creditsRedeemed || 0).toLocaleString()}
+          note="Simulated voucher redemptions"
+        />
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="card p-5 lg:col-span-2">
           <h3 className="font-semibold">Materials back in the loop</h3><p className="text-xs text-muted">Monthly recycled weight (kg)</p>
@@ -78,7 +97,9 @@ export default function AdminDashboard() {
             <span className="bg-mint text-forest text-[11px] font-semibold rounded-full px-2.5 py-1">RECYCLED</span>
           </div>))}
       </div>
-      <div className="bg-mint rounded-xl p-4 text-xs text-muted"><b className="text-ink">How to read these totals.</b> Only RECYCLED records contribute to diverted kg, estimated CO2e and recycled-item counts. CO2e uses a simplified factor, not a verified carbon methodology.</div>
+      <div className="bg-mint rounded-xl p-4 text-xs text-muted">
+        <b className="text-ink">How to read these totals.</b> Only RECYCLED records contribute to diverted kg, estimated CO2e and recycled-item counts. Delivery-partner handovers showcase the proposed last-mile logistics partnership (e.g. Amazon staff).
+      </div>
     </div>
   );
 }

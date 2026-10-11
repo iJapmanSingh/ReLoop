@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Coins, Truck } from 'lucide-react';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import Stepper from '../components/Stepper';
-import { CATEGORY, DeviceIcon } from '../components/ui';
+import { DeviceIcon, CATEGORY } from '../components/ui';
 
 const WINDOWS = ['10:00-13:00', '14:00-17:00', '17:00-20:00'];
 const tomorrow = () => new Date(Date.now() + 864e5).toISOString().slice(0, 10);
@@ -13,12 +14,41 @@ export default function RequestPickup() {
   const { user } = useAuth();
   const nav = useNavigate();
   const [item, setItem] = useState(null);
-  const [f, setF] = useState({ address: '', landmark: '', city: user.city || '', pincode: user.pincode || '', preferredDate: tomorrow(), timeWindow: WINDOWS[0], contactNumber: user.phone || '', consentShared: false });
+  const [f, setF] = useState({
+    address: '',
+    landmark: '',
+    city: user.city || '',
+    pincode: user.pincode || '',
+    preferredDate: tomorrow(),
+    timeWindow: WINDOWS[0],
+    contactNumber: user.phone || '',
+    consentShared: false,
+    viaDeliveryPartner: false,
+  });
+  const [partnerCheck, setPartnerCheck] = useState(null);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+
   const set = (k) => (e) => setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
 
-  useEffect(() => { api.getItem(id).then(setItem).catch((e) => setErr(e.message)); }, [id]);
+  useEffect(() => {
+    api.getItem(id).then(setItem).catch((e) => setErr(e.message));
+  }, [id]);
+
+  useEffect(() => {
+    const pin = f.pincode?.trim();
+    if (pin && pin.length === 6 && /^\d{6}$/.test(pin)) {
+      api.partnerAvailability(pin)
+        .then((res) => {
+          setPartnerCheck(res);
+          if (!res.available) setF((prev) => ({ ...prev, viaDeliveryPartner: false }));
+        })
+        .catch(() => setPartnerCheck(null));
+    } else {
+      setPartnerCheck(null);
+      setF((prev) => ({ ...prev, viaDeliveryPartner: false }));
+    }
+  }, [f.pincode]);
 
   async function submit(e) {
     e.preventDefault();
@@ -30,6 +60,11 @@ export default function RequestPickup() {
   }
 
   if (!item) return err ? <p className="text-red-700">{err}</p> : <p className="text-muted">Loading…</p>;
+
+  const baseCredits = item.estimatedCredits || 0;
+  const partnerBonus = partnerCheck?.bonusCredits || 25;
+  const totalEstimatedCredits = baseCredits + (f.viaDeliveryPartner ? partnerBonus : 0);
+
   return (
     <div>
       <p className="text-[11px] font-bold tracking-wider text-forest">CITIZEN / REQUEST PICKUP</p>
@@ -43,8 +78,41 @@ export default function RequestPickup() {
           <div><label className="label">Landmark</label><input className="input" value={f.landmark} onChange={set('landmark')} /></div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div><label className="label">City *</label><input className="input" required value={f.city} onChange={set('city')} /></div>
-            <div><label className="label">Pincode *</label><input className="input" required maxLength={6} pattern="\d{6}" value={f.pincode} onChange={set('pincode')} /></div>
+            <div>
+              <label className="label">Pincode *</label>
+              <input className="input" required maxLength={6} pattern="\d{6}" value={f.pincode} onChange={set('pincode')} />
+            </div>
           </div>
+
+          {/* Delivery partner route check */}
+          {partnerCheck?.available && (
+            <div className="border border-forest/30 bg-mint/50 rounded-xl p-4 space-y-2">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="deliveryPartner"
+                  className="mt-1 h-4 w-4 rounded accent-forest"
+                  checked={f.viaDeliveryPartner}
+                  onChange={set('viaDeliveryPartner')}
+                />
+                <label htmlFor="deliveryPartner" className="cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <Truck size={16} className="text-forest" />
+                    <span className="font-semibold text-sm text-forest">
+                      Hand over with your next delivery (+{partnerCheck.bonusCredits} bonus credits)
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted mt-1">
+                    A verified last-mile delivery partner ({partnerCheck.network || 'e.g. Amazon delivery staff'}) currently covers pincode {f.pincode}. They will collect your e-waste on their existing daily delivery route.
+                  </p>
+                  <span className="inline-block mt-2 text-[10px] bg-white text-muted px-2 py-0.5 rounded border border-black/10">
+                    Proposed Delivery Partnership Pilot
+                  </span>
+                </label>
+              </div>
+            </div>
+          )}
+
           <div className="grid sm:grid-cols-2 gap-4">
             <div><label className="label">Preferred date *</label><input className="input" type="date" required min={new Date().toISOString().slice(0, 10)} value={f.preferredDate} onChange={set('preferredDate')} /></div>
             <div><label className="label">Preferred time window *</label>
@@ -58,11 +126,21 @@ export default function RequestPickup() {
           <p className="text-xs text-muted">You can cancel only while the request is REQUESTED.</p>
         </form>
         <div className="space-y-4">
-          <div className="card p-5 text-sm">
-            <p className="font-semibold text-lg mb-3">Your pickup item</p>
+          <div className="card p-5 text-sm space-y-3">
+            <p className="font-semibold text-lg">Your pickup item</p>
             <div className="flex items-center gap-3"><DeviceIcon category={item.category} />
               <div><p className="font-semibold">{item.brand} {item.model}</p><p className="text-xs text-muted">{item.code} · {CATEGORY[item.category].label} · {item.weightKg} kg</p></div></div>
-            {item.recommendation && <span className="inline-block mt-3 bg-mint text-forest text-[11px] font-bold rounded-full px-2.5 py-1">AI RECOMMENDATION: {item.recommendation}</span>}
+            {item.recommendation && <span className="inline-block bg-mint text-forest text-[11px] font-bold rounded-full px-2.5 py-1">AI RECOMMENDATION: {item.recommendation}</span>}
+
+            <div className="bg-mint rounded-xl p-3 text-sm mt-3 border border-forest/10">
+              <div className="flex items-center gap-1.5 font-semibold text-forest">
+                <Coins size={16} />
+                <span>Earn ~{totalEstimatedCredits} credits</span>
+              </div>
+              <p className="text-xs text-muted mt-1">
+                Base: {baseCredits} credits {f.viaDeliveryPartner ? `+ ${partnerBonus} delivery-handover bonus` : ''}. Issued upon RECYCLED stage.
+              </p>
+            </div>
           </div>
           <div className="bg-amber-soft rounded-2xl p-4 text-sm"><p className="font-semibold">Before the collector arrives</p>
             <p className="text-amber-900/80 mt-1">Keep the device off and dry. Don't dismantle it. Erase personal data only if safe. Check the assigned collector's name before handover.</p></div>

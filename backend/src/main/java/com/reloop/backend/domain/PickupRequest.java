@@ -28,6 +28,12 @@ public class PickupRequest {
     private String timeWindow; // e.g. "10:00-13:00"
     private String contactNumber;
     private boolean consentShared;
+    /** Citizen asked for the item to be collected by a delivery partner already on their route (proposed Amazon partnership). */
+    @Column(columnDefinition = "boolean default false")
+    private boolean viaDeliveryPartner;
+    /** Credits granted to the citizen when this pickup reached RECYCLED (0 until then). */
+    @Column(columnDefinition = "integer default 0")
+    private int creditsAwarded;
     @Enumerated(EnumType.STRING)
     private PickupStatus status = PickupStatus.REQUESTED;
     private Instant createdAt = Instant.now();

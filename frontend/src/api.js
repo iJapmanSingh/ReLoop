@@ -39,6 +39,7 @@ export const api = {
   generateAdvice: (id) => request(`/items/${id}/advice`, { method: 'POST' }),
   // pickups
   createPickup: (b) => request('/pickups', { method: 'POST', body: b }),
+  partnerAvailability: (pincode) => request(`/pickups/partner-availability?pincode=${pincode}`),
   myPickups: () => request('/pickups/mine'),
   getPickup: (id) => request(`/pickups/${id}`),
   cancelPickup: (id) => request(`/pickups/${id}/cancel`, { method: 'PATCH' }),
@@ -47,5 +48,8 @@ export const api = {
   assignedPickups: () => request('/pickups/assigned'),
   acceptPickup: (id) => request(`/pickups/${id}/accept`, { method: 'PATCH' }),
   setStatus: (id, status) => request(`/pickups/${id}/status`, { method: 'PATCH', body: { status } }),
+  // credits & rewards (citizen)
+  credits: () => request('/credits'),
+  redeem: (rewardId) => request('/credits/redeem', { method: 'POST', body: { rewardId } }),
   adminStats: () => request('/admin/stats'),
 };

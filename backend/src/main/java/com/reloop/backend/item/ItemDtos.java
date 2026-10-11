@@ -28,5 +28,6 @@ public final class ItemDtos {
     public record ItemDto(Long id, String code, Category category, String brand, String model,
                           ItemCondition condition, double weightKg, String description, String photoUrl,
                           Recommendation recommendation, Advice advice,
-                          PickupStatus status, Long pickupId, String pickupCode, Instant createdAt) {}
+                          PickupStatus status, Long pickupId, String pickupCode, Instant createdAt,
+                          int estimatedCredits) {}
 }

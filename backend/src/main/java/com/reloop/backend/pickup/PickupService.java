@@ -1,16 +1,19 @@
 package com.reloop.backend.pickup;
 
 import com.reloop.backend.config.ApiException;
+import com.reloop.backend.credits.CreditService;
 import com.reloop.backend.domain.*;
 import com.reloop.backend.item.ItemService;
 import com.reloop.backend.pickup.PickupDtos.*;
 import com.reloop.backend.repo.PickupRequestRepository;
 import com.reloop.backend.repo.StatusHistoryRepository;
+import com.reloop.backend.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -19,6 +22,8 @@ public class PickupService {
     private final PickupRequestRepository pickups;
     private final StatusHistoryRepository history;
     private final ItemService itemService;
+    private final UserRepository users;
+    private final CreditService credits;
 
     // ---------- citizen ----------
 
@@ -43,10 +48,22 @@ public class PickupService {
         p.setTimeWindow(r.timeWindow());
         p.setContactNumber(r.contactNumber());
         p.setConsentShared(true);
+        // only honour the delivery-partner choice if a verified partner actually serves this pincode
+        p.setViaDeliveryPartner(r.viaDeliveryPartner() && !partnersIn(r.pincode()).isEmpty());
         p.setStatus(PickupStatus.REQUESTED);
         pickups.save(p);
         log(p, citizen);
         return view(p, citizen, true);
+    }
+
+    public PartnerAvailability partnerAvailability(String pincode) {
+        List<User> partners = partnersIn(pincode);
+        String network = partners.isEmpty() ? null : partners.get(0).getOrganization();
+        return new PartnerAvailability(!partners.isEmpty(), partners.size(), network, CreditService.PARTNER_BONUS);
+    }
+
+    private List<User> partnersIn(String pincode) {
+        return users.findByRoleAndDeliveryPartnerTrueAndVerifiedTrueAndPincode(Role.COLLECTOR, pincode);
     }
 
     public List<PickupDto> mine(User citizen) {
@@ -70,8 +87,12 @@ public class PickupService {
     public List<PickupDto> available(User collector, String city, String pincode) {
         requireVerified(collector);
         String c = (city == null || city.isBlank()) ? collector.getCity() : city;
+        // a delivery partner's service area is their delivery route, so pin the filter to their pincode
+        String pin = (collector.isDeliveryPartner() && collector.getPincode() != null) ? collector.getPincode() : pincode;
         return pickups.findByStatusAndCityIgnoreCaseOrderByCreatedAtDesc(PickupStatus.REQUESTED, c).stream()
-                .filter(p -> pincode == null || pincode.isBlank() || p.getPincode().equals(pincode))
+                .filter(p -> pin == null || pin.isBlank() || p.getPincode().equals(pin))
+                // stable sort: requests that asked for a delivery partner come first for partners
+                .sorted(Comparator.comparing((PickupRequest p) -> collector.isDeliveryPartner() && !p.isViaDeliveryPartner()))
                 .map(p -> view(p, collector, false)).toList();
     }
 
@@ -88,6 +109,9 @@ public class PickupService {
             throw new ApiException(HttpStatus.CONFLICT, "This request is no longer available");
         if (!p.getCity().equalsIgnoreCase(collector.getCity()))
             throw new ApiException(HttpStatus.FORBIDDEN, "This request is outside your service area");
+        if (collector.isDeliveryPartner() && collector.getPincode() != null
+                && !collector.getPincode().equals(p.getPincode()))
+            throw new ApiException(HttpStatus.FORBIDDEN, "This request is outside your delivery route");
         p.setCollector(collector);
         p.setStatus(PickupStatus.ACCEPTED);
         pickups.save(p);
@@ -105,6 +129,7 @@ public class PickupService {
             throw new ApiException(HttpStatus.CONFLICT,
                     "Can't move from " + p.getStatus() + " to " + target + ". Stages can't be skipped.");
         p.setStatus(target);
+        if (target == PickupStatus.RECYCLED) credits.award(p); // citizen earns credits only at RECYCLED
         pickups.save(p);
         log(p, collector);
         return view(p, collector, true);
@@ -130,7 +155,7 @@ public class PickupService {
                 i.getWeightKg(), i.getItemCondition(), i.getDescription(), i.getRecommendation());
         User c = p.getCollector();
         CollectorInfo collector = (c != null && full)
-                ? new CollectorInfo("COL-" + String.format("%03d", c.getId()), c.getName(), c.getPhone(), c.getOrganization())
+                ? new CollectorInfo("COL-" + String.format("%03d", c.getId()), c.getName(), c.getPhone(), c.getOrganization(), c.isDeliveryPartner())
                 : null;
         var timeline = withTimeline
                 ? history.findByPickupOrderByChangedAtAsc(p).stream()
@@ -139,7 +164,8 @@ public class PickupService {
         return new PickupDto(p.getId(), p.getCode(), p.getStatus(), item, p.getCity(), p.getPincode(),
                 p.getPreferredDate(), p.getTimeWindow(), p.getCreatedAt(), p.getCitizen().getName(),
                 full ? p.getAddress() : null, full ? p.getLandmark() : null, full ? p.getContactNumber() : null,
-                collector, timeline);
+                collector, timeline, p.isViaDeliveryPartner(), p.getCreditsAwarded(),
+                credits.estimate(i) + (p.isViaDeliveryPartner() ? CreditService.PARTNER_BONUS : 0));
     }
 
     private boolean isAssigned(PickupRequest p, User u) {

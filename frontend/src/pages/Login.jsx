@@ -6,6 +6,7 @@ import AuthShell from '../components/AuthShell';
 const DEMO = [
   ['Citizen', 'ananya.rao@example.com', 'Citizen@123'],
   ['Collector', 'ravi@greenloop.in', 'Collector@123'],
+  ['Partner', 'suresh@delivery-partner.demo', 'Partner@123'],
   ['Admin', 'admin@ewaste.app', 'Admin@123'],
 ];
 

@@ -19,7 +19,8 @@ public final class PickupDtos {
             @NotNull @FutureOrPresent LocalDate preferredDate,
             @NotBlank String timeWindow,
             @NotBlank String contactNumber,
-            boolean consentShared) {}
+            boolean consentShared,
+            boolean viaDeliveryPartner) {}
 
     public record StatusUpdate(@NotNull PickupStatus status) {}
 
@@ -27,7 +28,10 @@ public final class PickupDtos {
                               double weightKg, ItemCondition condition, String description,
                               Recommendation recommendation) {}
 
-    public record CollectorInfo(String code, String name, String phone, String organization) {}
+    public record CollectorInfo(String code, String name, String phone, String organization, boolean deliveryPartner) {}
+
+    /** Is a verified delivery partner active in this pincode? network is the partner organisation name. */
+    public record PartnerAvailability(boolean available, int partners, String network, int bonusCredits) {}
 
     public record TimelineEntry(PickupStatus status, Instant at) {}
 
@@ -39,5 +43,6 @@ public final class PickupDtos {
                             String city, String pincode, LocalDate preferredDate, String timeWindow,
                             Instant createdAt, String citizenName,
                             String address, String landmark, String contactNumber,
-                            CollectorInfo collector, List<TimelineEntry> timeline) {}
+                            CollectorInfo collector, List<TimelineEntry> timeline,
+                            boolean viaDeliveryPartner, int creditsAwarded, int estimatedCredits) {}
 }
