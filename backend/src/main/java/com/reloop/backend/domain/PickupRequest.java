@@ -34,6 +34,21 @@ public class PickupRequest {
     /** Credits granted to the citizen when this pickup reached RECYCLED (0 until then). */
     @Column(columnDefinition = "integer default 0")
     private int creditsAwarded;
+    /** Six-digit code the citizen reads out at handover. The collector needs it to mark PICKED_UP. Null on pickups accepted before this feature. */
+    private String handoverCode;
+    /** Wrong handover codes entered so far (used to flag suspicious pickups for admin review). */
+    private Integer codeAttempts;
+    /** Recorded at RECYCLED: the facility that received the device and the receipt number it gave. */
+    private String facilityName;
+    private String receiptNumber;
+    /** Citizen feedback after RECYCLED. */
+    private Integer rating;
+    @Column(length = 500)
+    private String feedback;
+    /** True when the citizen reported a problem or too many wrong handover codes were entered. Admins review these. */
+    private Boolean flagged;
+    @Column(length = 500)
+    private String flagReason;
     @Enumerated(EnumType.STRING)
     private PickupStatus status = PickupStatus.REQUESTED;
     private Instant createdAt = Instant.now();

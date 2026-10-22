@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.Comparator;
 import java.util.List;
 
@@ -25,6 +26,12 @@ public class PickupService {
     private final UserRepository users;
     private final CreditService credits;
 
+    private static final int MAX_OPEN_PICKUPS = 5;
+    private static final int MAX_WRONG_CODES = 5;
+    private static final List<PickupStatus> OPEN =
+            List.of(PickupStatus.REQUESTED, PickupStatus.ACCEPTED, PickupStatus.PICKED_UP);
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     // ---------- citizen ----------
 
     @Transactional
@@ -32,6 +39,9 @@ public class PickupService {
         if (!r.consentShared())
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Please agree to share your address and contact number with the assigned collector");
+        if (pickups.countByCitizenAndStatusIn(citizen, OPEN) >= MAX_OPEN_PICKUPS)
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "You already have " + MAX_OPEN_PICKUPS
+                    + " open pickups. Please wait for one to finish before requesting another");
         Item item = itemService.owned(citizen, r.itemId());
         pickups.findFirstByItemOrderByCreatedAtDesc(item)
                 .filter(p -> p.getStatus() != PickupStatus.CANCELLED)
@@ -114,13 +124,21 @@ public class PickupService {
             throw new ApiException(HttpStatus.FORBIDDEN, "This request is outside your delivery route");
         p.setCollector(collector);
         p.setStatus(PickupStatus.ACCEPTED);
+        p.setHandoverCode(newHandoverCode());
+        p.setCodeAttempts(0);
         pickups.save(p);
         log(p, collector);
         return view(p, collector, true);
     }
 
-    @Transactional
-    public PickupDto updateStatus(User collector, Long id, PickupStatus target) {
+    /**
+     * noRollbackFor: a wrong handover code must still be counted, so the failed attempt is saved
+     * even though the request ends with an error.
+     */
+    @Transactional(noRollbackFor = ApiException.class)
+    public PickupDto updateStatus(User collector, Long id, StatusUpdate u) {
+        requireVerified(collector);
+        PickupStatus target = u.status();
         PickupRequest p = lock(id);
         if (p.getCollector() == null || !p.getCollector().getId().equals(collector.getId())) throw notFound();
         if (target != PickupStatus.PICKED_UP && target != PickupStatus.RECYCLED)
@@ -128,11 +146,42 @@ public class PickupService {
         if (!p.getStatus().canMoveTo(target))
             throw new ApiException(HttpStatus.CONFLICT,
                     "Can't move from " + p.getStatus() + " to " + target + ". Stages can't be skipped.");
+        if (target == PickupStatus.PICKED_UP) checkHandoverCode(p, u.handoverCode());
+        if (target == PickupStatus.RECYCLED) {
+            String facility = clean(u.facilityName());
+            String receipt = clean(u.receiptNumber());
+            if (facility == null || receipt == null)
+                throw new ApiException(HttpStatus.BAD_REQUEST,
+                        "Enter the facility that received the device and the receipt number before marking it recycled");
+            p.setFacilityName(facility);
+            p.setReceiptNumber(receipt);
+            credits.award(p); // citizen earns credits only at RECYCLED
+        }
         p.setStatus(target);
-        if (target == PickupStatus.RECYCLED) credits.award(p); // citizen earns credits only at RECYCLED
         pickups.save(p);
         log(p, collector);
         return view(p, collector, true);
+    }
+
+    // ---------- citizen feedback ----------
+
+    @Transactional
+    public PickupDto feedback(User citizen, Long id, FeedbackRequest r) {
+        PickupRequest p = lock(id);
+        if (!p.getCitizen().getId().equals(citizen.getId())) throw notFound();
+        if (p.getStatus() != PickupStatus.RECYCLED)
+            throw new ApiException(HttpStatus.CONFLICT, "You can rate a pickup once it has been recycled");
+        if (p.getRating() != null)
+            throw new ApiException(HttpStatus.CONFLICT, "You have already rated this pickup");
+        p.setRating(r.rating());
+        String comment = r.comment() == null ? "" : r.comment().trim();
+        p.setFeedback(comment.isEmpty() ? null : comment);
+        if (r.reportProblem()) {
+            p.setFlagged(true);
+            p.setFlagReason(comment.isEmpty() ? "Citizen reported a problem with this pickup" : comment);
+        }
+        pickups.save(p);
+        return view(p, citizen, true);
     }
 
     // ---------- shared ----------
@@ -155,8 +204,12 @@ public class PickupService {
                 i.getWeightKg(), i.getItemCondition(), i.getDescription(), i.getRecommendation());
         User c = p.getCollector();
         CollectorInfo collector = (c != null && full)
-                ? new CollectorInfo("COL-" + String.format("%03d", c.getId()), c.getName(), c.getPhone(), c.getOrganization(), c.isDeliveryPartner())
+                ? new CollectorInfo("COL-" + String.format("%03d", c.getId()), c.getName(), c.getPhone(), c.getOrganization(),
+                        c.isDeliveryPartner(), c.getRegistrationNumber(), c.getCollectorType(), c.isVerified(),
+                        withTimeline ? round1(pickups.averageRating(c)) : null,
+                        withTimeline ? pickups.ratingCount(c) : 0L)
                 : null;
+        boolean recycled = p.getStatus() == PickupStatus.RECYCLED;
         var timeline = withTimeline
                 ? history.findByPickupOrderByChangedAtAsc(p).stream()
                         .map(h -> new TimelineEntry(h.getStatus(), h.getChangedAt())).toList()
@@ -165,8 +218,41 @@ public class PickupService {
                 p.getPreferredDate(), p.getTimeWindow(), p.getCreatedAt(), p.getCitizen().getName(),
                 full ? p.getAddress() : null, full ? p.getLandmark() : null, full ? p.getContactNumber() : null,
                 collector, timeline, p.isViaDeliveryPartner(), p.getCreditsAwarded(),
-                credits.estimate(i) + (p.isViaDeliveryPartner() ? CreditService.PARTNER_BONUS : 0));
+                credits.estimate(i) + (p.isViaDeliveryPartner() ? CreditService.PARTNER_BONUS : 0),
+                owner && p.getStatus() == PickupStatus.ACCEPTED ? p.getHandoverCode() : null,
+                full && recycled ? p.getFacilityName() : null,
+                full && recycled ? p.getReceiptNumber() : null,
+                full ? p.getRating() : null, full ? p.getFeedback() : null,
+                (owner || viewer.getRole() == Role.ADMIN) && Boolean.TRUE.equals(p.getFlagged()),
+                p.getHandoverCode() != null);
     }
+
+    private static String newHandoverCode() { return String.format("%06d", RANDOM.nextInt(1_000_000)); }
+
+    /** Pickups accepted before handover codes existed have no code, so they are let through. */
+    private void checkHandoverCode(PickupRequest p, String entered) {
+        String expected = p.getHandoverCode();
+        if (expected == null) return;
+        if (entered != null && expected.equals(entered.trim())) return;
+        int attempts = (p.getCodeAttempts() == null ? 0 : p.getCodeAttempts()) + 1;
+        p.setCodeAttempts(attempts);
+        if (attempts >= MAX_WRONG_CODES && !Boolean.TRUE.equals(p.getFlagged())) {
+            p.setFlagged(true);
+            p.setFlagReason("Wrong handover code entered " + attempts + " times. Needs admin review.");
+        }
+        pickups.save(p);
+        throw new ApiException(HttpStatus.FORBIDDEN,
+                "That handover code is not correct. Ask the citizen to read it from their ReLoop app.");
+    }
+
+    private static String clean(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        if (t.length() < 2) return null;
+        return t.length() > 100 ? t.substring(0, 100) : t;
+    }
+
+    private static Double round1(Double v) { return v == null ? null : Math.round(v * 10) / 10.0; }
 
     private boolean isAssigned(PickupRequest p, User u) {
         return p.getCollector() != null && p.getCollector().getId().equals(u.getId());
@@ -178,7 +264,7 @@ public class PickupService {
 
     private void requireVerified(User u) {
         if (!u.isVerified())
-            throw new ApiException(HttpStatus.FORBIDDEN, "Your collector account is awaiting verification");
+            throw new ApiException(HttpStatus.FORBIDDEN, "Your collector account is not approved yet. An admin needs to verify your registration first");
     }
 
     private void log(PickupRequest p, User by) {

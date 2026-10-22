@@ -43,7 +43,7 @@ export default function MyItems() {
                 <StatusBadge status={i.status} />
               </div>
               <p className="text-xs text-muted">{CONDITION[i.condition]} · Added {fmtDate(i.createdAt)}</p>
-              <p className="text-sm">{i.recommendation ? <>AI suggests <b>{i.recommendation[0] + i.recommendation.slice(1).toLowerCase()}</b></> : 'No advice yet'}{i.pickupCode && <span className="text-muted"> · {i.pickupCode}</span>}</p>
+              <p className="text-sm">{i.recommendation ? <>Suggested: <b>{i.recommendation[0] + i.recommendation.slice(1).toLowerCase()}</b></> : 'No advice yet'}{i.pickupCode && <span className="text-muted"> · {i.pickupCode}</span>}</p>
               <div className="flex gap-2 pt-1">
                 {i.pickupId && i.status !== 'CANCELLED'
                   ? <Link to={`/citizen/pickups/${i.pickupId}`} className="btn btn-ghost">Track pickup</Link>

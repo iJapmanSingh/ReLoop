@@ -4,9 +4,10 @@ import { Truck } from 'lucide-react';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import { DeviceIcon, StatusBadge, StatCard, CATEGORY, CONDITION, fmtDate } from '../components/ui';
+import { RegBadge } from '../components/trust';
 
 export default function CollectorHome({ tab }) {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const nav = useNavigate();
   const isPartner = !!user.deliveryPartner;
 
@@ -38,9 +39,14 @@ export default function CollectorHome({ tab }) {
     }
   };
 
+  // pick up an admin's decision without needing a fresh login
+  useEffect(() => {
+    refresh();
+  }, []);
+
   useEffect(() => {
     load();
-  }, []);
+  }, [user.verified]);
 
   async function accept(id) {
     setBusyId(id);
@@ -98,8 +104,23 @@ export default function CollectorHome({ tab }) {
 
       {!user.verified && (
         <div className="bg-amber-soft rounded-xl p-4 text-sm">
-          <b>Verification pending.</b> You can browse after an admin verifies your identity and service area.
+          {user.verificationStatus === 'REJECTED' ? (
+            <><b>Application not approved.</b> {user.verificationNote || 'Please contact support to fix your details.'}</>
+          ) : user.verificationStatus === 'SUSPENDED' ? (
+            <><b>Account suspended.</b> {user.verificationNote || 'Please contact support.'}</>
+          ) : (
+            <>
+              <b>Application under review.</b> An admin is checking your registration{' '}
+              {user.registrationNumber ? <>(<RegBadge reg={user.registrationNumber} />)</> : null}. You'll see open requests here as soon as you're approved.
+            </>
+          )}
         </div>
+      )}
+      {user.verified && user.registrationNumber && (
+        <p className="text-xs text-muted">
+          <span className="bg-mint text-forest font-bold rounded px-2 py-0.5 mr-2">APPROVED COLLECTOR</span>
+          <RegBadge reg={user.registrationNumber} />
+        </p>
       )}
 
       <div className="grid sm:grid-cols-3 gap-4">
@@ -232,7 +253,7 @@ export default function CollectorHome({ tab }) {
       <div className="bg-mint rounded-xl p-4 text-sm">
         <b>Accept only what you can safely collect.</b>{' '}
         <span className="text-muted">
-          Acceptance moves a request to ACCEPTED and shares the citizen's address and contact with you. AI advice is guidance, not certification.
+          Acceptance moves a request to ACCEPTED and shares the citizen's address and contact with you. Safety advice is guidance, not certification.
         </span>
       </div>
     </div>

@@ -47,9 +47,14 @@ export const api = {
   availablePickups: (city, pincode) => request(`/pickups/available${qs({ city, pincode })}`),
   assignedPickups: () => request('/pickups/assigned'),
   acceptPickup: (id) => request(`/pickups/${id}/accept`, { method: 'PATCH' }),
-  setStatus: (id, status) => request(`/pickups/${id}/status`, { method: 'PATCH', body: { status } }),
+  // extra: { handoverCode } for PICKED_UP, { facilityName, receiptNumber } for RECYCLED
+  setStatus: (id, status, extra = {}) => request(`/pickups/${id}/status`, { method: 'PATCH', body: { status, ...extra } }),
+  submitFeedback: (id, body) => request(`/pickups/${id}/feedback`, { method: 'POST', body }),
   // credits & rewards (citizen)
   credits: () => request('/credits'),
   redeem: (rewardId) => request('/credits/redeem', { method: 'POST', body: { rewardId } }),
   adminStats: () => request('/admin/stats'),
+  adminCollectors: () => request('/admin/collectors'),
+  reviewCollector: (id, body) => request(`/admin/collectors/${id}/review`, { method: 'PATCH', body }),
+  adminFlagged: () => request('/admin/flagged'),
 };

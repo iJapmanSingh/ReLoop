@@ -31,7 +31,7 @@ public class RuleBasedAdviceService implements AdviceService {
                 List.of("Keep it switched off, dry and away from heat; do not charge it.",
                         "Do not open the casing or try to remove a damaged battery.",
                         "Back up and erase personal data only if it can be done safely."),
-                "Guidance, not certification. AI may be wrong; a trained collector or facility must confirm handling and the final disposal route.");
+                "Guidance, not certification. This advice comes from simple rules about your item and can be wrong; a trained collector or facility must confirm handling and the final disposal route.");
     }
 
     private Recommendation recommend(Category cat, ItemCondition cond) {

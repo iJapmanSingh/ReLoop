@@ -52,7 +52,7 @@ export function FacilitiesList({ signedIn }) {
           <div className="bg-mint rounded-2xl p-5 text-sm"><p className="font-semibold">Check before you travel</p>
             <p className="text-muted text-xs mt-1">Listings, distances and contacts are demo examples. For real disposal, verify the facility's current authorisation with the relevant State Pollution Control Board.</p></div>
           <div className="bg-mint rounded-2xl p-5 text-sm"><p className="font-semibold">Prefer a doorstep pickup?</p>
-            <p className="text-muted text-xs mt-1">Add your device, review its AI guidance and request a verified collector from your account.</p></div>
+            <p className="text-muted text-xs mt-1">Add your device, review its safety guidance and request a verified collector from your account.</p></div>
           <Link to={signedIn ? '/citizen/items/new' : '/register'} className="btn block">{signedIn ? 'Add an item for pickup' : 'Create your account'}</Link>
         </div>
       </div>

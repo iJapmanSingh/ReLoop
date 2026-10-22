@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, PieChart, Pie, Cell } from 'recharts';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { StatCard, CATEGORY, fmtDate } from '../components/ui';
 
@@ -65,6 +66,17 @@ export default function AdminDashboard() {
           value={(s.creditsRedeemed || 0).toLocaleString()}
           note="Simulated voucher redemptions"
         />
+      </div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Link to="/admin/trust" className="block">
+          <StatCard label="Collector applications" value={s.pendingCollectors || 0} note="Waiting for admin review" />
+        </Link>
+        <StatCard label="Approved collectors" value={s.verifiedCollectors || 0} note="Can accept pickups" />
+        <Link to="/admin/trust" className="block">
+          <StatCard label="Flagged pickups" value={s.flaggedPickups || 0} note="Reported problems and wrong codes" />
+        </Link>
+        <StatCard label="Average citizen rating" value={s.averageRating ? `${s.averageRating} / 5` : '—'} note={`${s.ratedPickups || 0} rated pickups`} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4">

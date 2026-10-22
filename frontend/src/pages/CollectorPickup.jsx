@@ -4,12 +4,16 @@ import { Check } from 'lucide-react';
 import { api } from '../api';
 import Timeline from '../components/Timeline';
 import { StatusBadge, CATEGORY, CONDITION, fmtDate } from '../components/ui';
+import { Stars } from '../components/trust';
 
 export default function CollectorPickup() {
   const { id } = useParams();
   const [p, setP] = useState(null);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [code, setCode] = useState('');
+  const [facility, setFacility] = useState('');
+  const [receipt, setReceipt] = useState('');
   useEffect(() => { api.getPickup(id).then(setP).catch((e) => setErr(e.message)); }, [id]);
 
   const run = (fn) => async () => {
@@ -34,7 +38,7 @@ export default function CollectorPickup() {
             <p className="font-semibold">{p.item.brand} {p.item.model}</p>
             <p className="text-xs text-muted">{p.item.code} · {CATEGORY[p.item.category].label} · {p.item.weightKg} kg · {CONDITION[p.item.condition]}</p>
             <p className="text-sm text-muted mt-2">{p.item.description}</p>
-            {p.item.recommendation && <span className="inline-block mt-3 bg-mint text-forest text-[11px] font-bold rounded-full px-2.5 py-1">AI SUGGESTS {p.item.recommendation} · GUIDANCE ONLY</span>}
+            {p.item.recommendation && <span className="inline-block mt-3 bg-mint text-forest text-[11px] font-bold rounded-full px-2.5 py-1">SUGGESTED: {p.item.recommendation} · GUIDANCE ONLY</span>}
             <div className="border-t border-black/5 mt-4 pt-4 text-sm">
               <p className="text-lg font-semibold">{p.citizenName}</p>
               {mine ? (<>
@@ -55,14 +59,37 @@ export default function CollectorPickup() {
                 <h2 className="font-semibold text-lg">Next: confirm the handover</h2>
                 <p className="text-sm text-muted mt-1">Mark PICKED_UP only after receiving the device from {p.citizenName}. This step does not count as completed recycling.</p>
                 {['Match the device and pickup ID.', 'Check for battery damage without opening the casing.', 'Confirm safe receipt with the citizen.'].map((t) => <p key={t} className="flex gap-2 text-sm mt-2"><Check size={16} className="text-forest mt-0.5" />{t}</p>)}
-                <button className="btn w-full mt-4" disabled={busy} onClick={run(() => api.setStatus(id, 'PICKED_UP'))}>Mark picked up</button>
+                {p.handoverCodeRequired && (
+                  <div className="mt-4">
+                    <label className="label">Handover code from the citizen</label>
+                    <input className="input font-mono tracking-widest text-lg" inputMode="numeric" maxLength={6} placeholder="6-digit code"
+                      value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} />
+                    <p className="text-xs text-muted mt-1">The citizen sees this code in their ReLoop app. Ask for it at the door, and don't mark the pickup without it.</p>
+                  </div>
+                )}
+                <button className="btn w-full mt-4" disabled={busy || (p.handoverCodeRequired && code.length !== 6)}
+                  onClick={run(() => api.setStatus(id, 'PICKED_UP', { handoverCode: code }))}>Mark picked up</button>
               </>)}
               <h2 className="font-semibold mt-5">{p.status === 'ACCEPTED' ? 'Then: record recycling completion' : p.status === 'PICKED_UP' ? 'Record recycling completion' : 'Completed'}</h2>
               {p.status === 'RECYCLED'
-                ? <p className="text-sm text-muted mt-1">Recycling recorded. This device now counts toward the citizen's impact.</p>
+                ? <div className="text-sm text-muted mt-1 space-y-1">
+                    <p>Recycling recorded. This device now counts toward the citizen's impact.</p>
+                    {p.facilityName && <p><b className="text-ink">Received by:</b> {p.facilityName} · Receipt {p.receiptNumber}</p>}
+                    {p.rating && <p><b className="text-ink">Citizen rating:</b> <Stars value={p.rating} />{p.feedback ? ` "${p.feedback}"` : ''}</p>}
+                  </div>
                 : <>
-                    <button className="btn w-full mt-3" disabled={busy || p.status !== 'PICKED_UP'} onClick={run(() => api.setStatus(id, 'RECYCLED'))}>Mark recycled</button>
-                    <p className="text-xs text-muted mt-2">{p.status === 'PICKED_UP' ? 'Record RECYCLED only after authorised processing is completed, never at collection.' : 'Unavailable until status is PICKED_UP.'}</p>
+                    {p.status === 'PICKED_UP' && (
+                      <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                        <div><label className="label">Facility that received it</label>
+                          <input className="input" placeholder="Registered recycler or facility" value={facility} onChange={(e) => setFacility(e.target.value)} /></div>
+                        <div><label className="label">Receipt number</label>
+                          <input className="input" placeholder="From the facility" value={receipt} onChange={(e) => setReceipt(e.target.value)} /></div>
+                      </div>
+                    )}
+                    <button className="btn w-full mt-3"
+                      disabled={busy || p.status !== 'PICKED_UP' || facility.trim().length < 2 || receipt.trim().length < 2}
+                      onClick={run(() => api.setStatus(id, 'RECYCLED', { facilityName: facility, receiptNumber: receipt }))}>Mark recycled</button>
+                    <p className="text-xs text-muted mt-2">{p.status === 'PICKED_UP' ? 'Record RECYCLED only after a registered facility has received the device, and keep the receipt. The citizen sees these details.' : 'Unavailable until status is PICKED_UP.'}</p>
                   </>}
             </div>
           )}

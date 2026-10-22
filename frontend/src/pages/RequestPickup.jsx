@@ -130,7 +130,7 @@ export default function RequestPickup() {
             <p className="font-semibold text-lg">Your pickup item</p>
             <div className="flex items-center gap-3"><DeviceIcon category={item.category} />
               <div><p className="font-semibold">{item.brand} {item.model}</p><p className="text-xs text-muted">{item.code} · {CATEGORY[item.category].label} · {item.weightKg} kg</p></div></div>
-            {item.recommendation && <span className="inline-block bg-mint text-forest text-[11px] font-bold rounded-full px-2.5 py-1">AI RECOMMENDATION: {item.recommendation}</span>}
+            {item.recommendation && <span className="inline-block bg-mint text-forest text-[11px] font-bold rounded-full px-2.5 py-1">SUGGESTED: {item.recommendation}</span>}
 
             <div className="bg-mint rounded-xl p-3 text-sm mt-3 border border-forest/10">
               <div className="flex items-center gap-1.5 font-semibold text-forest">
@@ -144,7 +144,7 @@ export default function RequestPickup() {
           </div>
           <div className="bg-amber-soft rounded-2xl p-4 text-sm"><p className="font-semibold">Before the collector arrives</p>
             <p className="text-amber-900/80 mt-1">Keep the device off and dry. Don't dismantle it. Erase personal data only if safe. Check the assigned collector's name before handover.</p></div>
-          <Link to={`/citizen/items/${id}`} className="btn btn-ghost block">Back to AI advice</Link>
+          <Link to={`/citizen/items/${id}`} className="btn btn-ghost block">Back to safety advice</Link>
         </div>
       </div>
     </div>

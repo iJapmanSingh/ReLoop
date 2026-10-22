@@ -33,7 +33,7 @@ export default function ItemAdvice() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-mint rounded-3xl border border-forest/20 p-6 space-y-5">
           <div className="flex justify-between text-xs font-bold tracking-wider text-forest">
-            <span className="flex items-center gap-1.5"><Sparkles size={14} /> AI ADVICE</span>
+            <span className="flex items-center gap-1.5"><Sparkles size={14} /> SAFETY ADVICE</span>
             <span>RECOMMENDATION: {a.recommendation}</span>
           </div>
           <div className="flex items-center gap-3"><DeviceIcon category={item.category} />
