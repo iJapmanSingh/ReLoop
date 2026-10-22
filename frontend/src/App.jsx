@@ -12,6 +12,7 @@ import PickupTracking from './pages/PickupTracking';
 import CollectorHome from './pages/CollectorHome';
 import CollectorPickup from './pages/CollectorPickup';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminTrust from './pages/AdminTrust';
 import MyItems from './pages/MyItems';
 import MyPickups from './pages/MyPickups';
 import CitizenFacilities, { PublicFacilities } from './pages/Facilities';
@@ -55,6 +56,8 @@ const collectorRoutes = (
   </>
 );
 
+const adminRoutes = <Route path="trust" element={<AdminTrust />} />;
+
 export default function App() {
   return (
     <Routes>
@@ -64,7 +67,7 @@ export default function App() {
       <Route path="/facilities" element={<PublicFacilities />} />
       {workspace('CITIZEN', <CitizenOverview />, citizenRoutes)}
       {workspace('COLLECTOR', <CollectorHome tab="available" />, collectorRoutes)}
-      {workspace('ADMIN', <AdminDashboard />)}
+      {workspace('ADMIN', <AdminDashboard />, adminRoutes)}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

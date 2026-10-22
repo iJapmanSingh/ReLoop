@@ -4,6 +4,7 @@ import com.reloop.backend.config.ApiException;
 import com.reloop.backend.config.JwtService;
 import com.reloop.backend.domain.Role;
 import com.reloop.backend.domain.User;
+import com.reloop.backend.domain.VerificationStatus;
 import com.reloop.backend.repo.UserRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -16,6 +17,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -23,6 +26,9 @@ public class AuthController {
     private final UserRepository users;
     private final PasswordEncoder encoder;
     private final JwtService jwt;
+
+    private static final Set<String> COLLECTOR_TYPES =
+            Set.of("RECYCLER", "REFURBISHER", "AUTHORISED_COLLECTOR", "DELIVERY_PARTNER");
 
     public record RegisterRequest(
             @NotBlank String name,
@@ -32,17 +38,23 @@ public class AuthController {
             @NotBlank String city,
             String pincode,
             @NotNull Role role,
-            String organization) {}
+            String organization,
+            String collectorType,
+            String registrationNumber) {}
 
     public record LoginRequest(@NotBlank String email, @NotBlank String password) {}
 
     public record UserDto(Long id, String name, String email, Role role, String phone,
                           String city, String pincode, String organization, boolean verified,
-                          boolean deliveryPartner, int creditBalance) {
+                          boolean deliveryPartner, int creditBalance,
+                          String collectorType, String registrationNumber,
+                          String verificationStatus, String verificationNote) {
         public static UserDto of(User u) {
             return new UserDto(u.getId(), u.getName(), u.getEmail(), u.getRole(), u.getPhone(),
                     u.getCity(), u.getPincode(), u.getOrganization(), u.isVerified(),
-                    u.isDeliveryPartner(), u.getCreditBalance());
+                    u.isDeliveryPartner(), u.getCreditBalance(),
+                    u.getCollectorType(), u.getRegistrationNumber(),
+                    VerificationStatus.of(u), u.getVerificationNote());
         }
     }
 
@@ -56,6 +68,21 @@ public class AuthController {
         if (users.existsByEmail(email))
             throw new ApiException(HttpStatus.CONFLICT, "Email already registered");
 
+        String type = null;
+        String registration = null;
+        if (r.role() == Role.COLLECTOR) {
+            type = r.collectorType() == null ? "" : r.collectorType().trim().toUpperCase();
+            registration = r.registrationNumber() == null ? "" : r.registrationNumber().trim();
+            if (r.organization() == null || r.organization().isBlank())
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Enter the organization you collect for");
+            if (!COLLECTOR_TYPES.contains(type))
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Choose what kind of collector you are");
+            if (registration.length() < 4)
+                throw new ApiException(HttpStatus.BAD_REQUEST,
+                        "Enter your registration or partner ID (at least 4 characters). An admin checks it before you can accept pickups");
+            if (type.equals("DELIVERY_PARTNER") && (r.pincode() == null || !r.pincode().matches("\\d{6}")))
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Delivery partners need the 6-digit pincode of their delivery route");
+        }
         User u = new User();
         u.setName(r.name().trim());
         u.setEmail(email);
@@ -65,7 +92,13 @@ public class AuthController {
         u.setCity(r.city());
         u.setPincode(r.pincode());
         u.setOrganization(r.organization());
-        u.setVerified(false); // collectors must be verified before accepting pickups
+        u.setVerified(false); // collectors must be approved by an admin before accepting pickups
+        if (r.role() == Role.COLLECTOR) {
+            u.setCollectorType(type);
+            u.setRegistrationNumber(registration);
+            u.setDeliveryPartner(type.equals("DELIVERY_PARTNER"));
+            u.setVerificationStatus(VerificationStatus.PENDING);
+        }
         users.save(u);
         return new AuthResponse(jwt.generate(u), UserDto.of(u));
     }

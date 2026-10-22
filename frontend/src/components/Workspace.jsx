@@ -17,7 +17,10 @@ const NAV = {
     ['/collector/assigned', 'Assigned pickups'],
     ['/collector/completed', 'Completed'],
   ],
-  ADMIN: [['/admin', 'Impact overview']],
+  ADMIN: [
+    ['/admin', 'Impact overview'],
+    ['/admin/trust', 'Collectors & trust'],
+  ],
 };
 
 export default function Workspace() {

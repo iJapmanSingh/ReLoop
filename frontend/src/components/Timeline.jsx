@@ -1,5 +1,5 @@
 const STAGES = [
-  ['REQUESTED', 'Request received', 'Request shared with verified local collectors.'],
+  ['REQUESTED', 'Request received', 'Request shared with approved local collectors.'],
   ['ACCEPTED', 'Collector assigned', 'Waiting for a collector to accept.'],
   ['PICKED_UP', 'Device handed over', 'Awaiting pickup confirmation.'],
   ['RECYCLED', 'Materials responsibly processed', 'Impact updates only after completion.'],

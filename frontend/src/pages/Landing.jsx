@@ -10,7 +10,7 @@ const H2 = ({ children }) => <h2 className="text-3xl md:text-4xl font-semibold t
 const STATS = [['1,284 kg', 'e-waste diverted'], ['3,852 kg CO2e', 'estimated emissions saved'], ['428', 'items recycled']];
 const STEPS = [
   [Laptop, 'Tell us about your device', 'Add its category, condition and approximate weight. A photo helps, but is optional.'],
-  [Sparkles, 'Get a considered recommendation', 'AI guidance flags possible hazards and suggests Repair, Resell, Donate or Recycle.'],
+  [Sparkles, 'Get a considered recommendation', 'Safety guidance flags possible hazards and suggests Repair, Resell, Donate or Recycle.'],
   [Truck, 'Arrange a verified pickup', 'Choose an address and date. Follow every step from request to completed recycling.'],
 ];
 const CARE = [
@@ -23,7 +23,8 @@ const DEVICES = [[Smartphone, 'Phones & tablets'], [Laptop, 'Laptops & computers
 const CITIES = [['Bengaluru', 'Indiranagar · 560038', 'Koramangala · Whitefield · Demo coverage'], ['Pune', 'Kothrud · 411038', 'Aundh · Baner · Demo coverage'], ['Hyderabad', 'Gachibowli · 500032', 'Madhapur · Kondapur · Demo coverage']];
 const FAQ = [
   ['What happens to my data?', 'Back up files, sign out of accounts and erase personal data before handover. We do not provide a data-erasure certificate.'],
-  ['Is AI advice a safety certificate?', 'No. It is guidance based on your item details. A trained collector or facility must confirm safe handling and the final route.'],
+  ['Is the safety advice a certificate?', 'No. It comes from simple rules about your item\'s type and condition, so it can be wrong. A trained collector or facility must confirm safe handling and the final route.'],
+  ['How do I know a collector is genuine?', 'Collectors apply with a registration or partner ID, and an admin approves them before they can accept any request. At pickup you read out a 6-digit code from your app, and the collector records the facility and receipt when your device is recycled. You can rate every pickup and report problems.'],
   ['Can I cancel a pickup?', 'Yes, only while it is REQUESTED. After acceptance, contact your assigned collector if you need help.'],
   ['When does my impact update?', 'Only after RECYCLED. Demo CO2e values are illustrative estimates, not audited measurements.'],
 ];
@@ -108,9 +109,9 @@ export default function Landing() {
           <img src="/images/handover.jpg" alt="A verified collector sorting devices" className="rounded-3xl w-full h-72 object-cover" />
           <div>
             <Eyebrow>TRUST AT THE DOORSTEP</Eyebrow><H2>A real person.<br />A responsible handover.</H2>
-            <p className="text-muted mt-4 text-sm">Your assigned collector's verified profile and demo contact details appear after acceptance. Never hand over a device to an unassigned person.</p>
+            <p className="text-muted mt-4 text-sm">Your assigned collector's verified profile and demo contact details appear after acceptance. You also get a 6-digit handover code: share it only when the collector is at your door, and never hand over a device to an unassigned person.</p>
             <ul className="mt-5 space-y-2 text-sm">
-              {['Collector identity checked', 'Pickup recorded at every stage', 'Recycling completion visible in your account'].map((t) => (
+              {['Collectors approved by an admin before they can accept requests', 'Handover code, facility and receipt recorded', 'Recycling completion visible in your account'].map((t) => (
                 <li key={t} className="flex gap-2 items-center"><CheckCircle2 size={16} className="text-forest" />{t}</li>))}
             </ul>
             <p className="text-[11px] text-muted mt-4">Collectors: join the network through the Collector registration option.</p>

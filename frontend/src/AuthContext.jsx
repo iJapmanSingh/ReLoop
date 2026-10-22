@@ -18,6 +18,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => finish(await api.login({ email, password }));
   const register = async (body) => finish(await api.register(body));
   const logout = () => { tokenStore.clear(); setUser(null); };
+  const refresh = async () => { try { setUser(await api.me()); } catch { /* keep the current user */ } };
 
-  return <Ctx.Provider value={{ user, loading, login, register, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, loading, login, register, logout, refresh }}>{children}</Ctx.Provider>;
 }

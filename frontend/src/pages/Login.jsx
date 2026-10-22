@@ -7,8 +7,11 @@ const DEMO = [
   ['Citizen', 'ananya.rao@example.com', 'Citizen@123'],
   ['Collector', 'ravi@greenloop.in', 'Collector@123'],
   ['Partner', 'suresh@delivery-partner.demo', 'Partner@123'],
-  ['Admin', 'admin@ewaste.app', 'Admin@123'],
+  ['Pending collector', 'meera@ecocycle.demo', 'Collector@123'],
 ];
+
+// The admin quick-fill is for local demos only: build with VITE_SHOW_DEMO_ADMIN=true to show it.
+if (import.meta.env.VITE_SHOW_DEMO_ADMIN === 'true') DEMO.push(['Admin', 'admin@ewaste.app', 'Admin@123']);
 
 export default function Login() {
   const { login } = useAuth();
@@ -42,7 +45,7 @@ export default function Login() {
       <p className="text-sm mt-4">New here? <Link to="/register" className="text-forest font-semibold">Create an account →</Link></p>
       <div className="mt-6 bg-mint rounded-xl p-4 text-sm">
         <p className="font-semibold mb-2">Demo accounts</p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {DEMO.map(([n, e, p]) => (
             <button key={n} type="button" className="btn btn-ghost !py-1.5" onClick={() => { setEmail(e); setPassword(p); }}>{n}</button>
           ))}

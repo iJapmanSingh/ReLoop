@@ -1,5 +1,5 @@
 export default function Stepper({ step }) {
-  const labels = ['List item', 'AI advice', 'Book pickup'];
+  const labels = ['List item', 'Safety advice', 'Book pickup'];
   return (
     <ol className="flex flex-wrap gap-x-8 gap-y-2 text-sm my-6">
       {labels.map((l, i) => {

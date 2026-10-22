@@ -51,6 +51,7 @@ public class DemoDataSeeder implements CommandLineRunner {
 
         PickupStatus[] steps = {PickupStatus.REQUESTED, PickupStatus.ACCEPTED, PickupStatus.PICKED_UP, PickupStatus.RECYCLED};
         int totalPoints = 0;
+        int seq = 0;
         for (Demo d : demos) {
             Instant t0 = Instant.now().minus(Duration.ofDays(d.daysAgo()));
             User collector = d.viaPartner() ? suresh : ravi;
@@ -82,6 +83,10 @@ public class DemoDataSeeder implements CommandLineRunner {
             p.setViaDeliveryPartner(d.viaPartner());
             p.setStatus(PickupStatus.RECYCLED);
             p.setCreditsAwarded(pts);
+            seq++;
+            p.setFacilityName("Demo Recycling Facility (sample record)");
+            p.setReceiptNumber("DEMO-RCPT-" + (3000 + seq));
+            p.setRating(5);
             p.setCreatedAt(t0);
             pickups.save(p);
 

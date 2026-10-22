@@ -3,6 +3,7 @@ package com.reloop.backend.stats;
 import com.reloop.backend.domain.*;
 import com.reloop.backend.repo.CreditTransactionRepository;
 import com.reloop.backend.repo.PickupRequestRepository;
+import com.reloop.backend.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 public class StatsController {
     private final PickupRequestRepository pickups;
     private final CreditTransactionRepository txs;
+    private final UserRepository users;
     @Value("${app.impact.co2-per-kg:3.0}")
     private double co2PerKg;
 
@@ -31,7 +33,9 @@ public class StatsController {
     public record AdminStats(double totalKg, double totalCo2, long itemsRecycled, long totalRequests,
                              Map<String, Long> statusCounts, List<MonthKg> monthly,
                              List<Bucket> byCity, List<Bucket> byDevice, List<Recent> recent,
-                             long partnerPickups, long creditsIssued, long creditsRedeemed) {}
+                             long partnerPickups, long creditsIssued, long creditsRedeemed,
+                             long verifiedCollectors, long pendingCollectors, long flaggedPickups,
+                             Double averageRating, long ratedPickups) {}
 
     @GetMapping("/stats")
     public AdminStats stats() {
@@ -66,9 +70,18 @@ public class StatsController {
         long creditsRedeemed = txs.findAll().stream()
                 .filter(t -> t.getType() == CreditType.REDEEM).mapToLong(t -> -t.getPoints()).sum();
 
+        List<User> collectors = users.findByRoleOrderByNameAsc(Role.COLLECTOR);
+        long verifiedCollectors = collectors.stream().filter(User::isVerified).count();
+        long pendingCollectors = collectors.stream()
+                .filter(u -> VerificationStatus.PENDING.equals(VerificationStatus.of(u))).count();
+        long flaggedPickups = all.stream().filter(p -> Boolean.TRUE.equals(p.getFlagged())).count();
+        List<Integer> ratings = all.stream().map(PickupRequest::getRating).filter(Objects::nonNull).toList();
+        Double averageRating = ratings.isEmpty() ? null
+                : round(ratings.stream().mapToInt(Integer::intValue).average().orElse(0));
         return new AdminStats(round(kg), round(kg * co2PerKg), done.size(), total, counts, monthly,
                 buckets(done, p -> title(p.getCity())), buckets(done, p -> p.getItem().getCategory().name()), recent,
-                partnerPickups, creditsIssued, creditsRedeemed);
+                partnerPickups, creditsIssued, creditsRedeemed,
+                verifiedCollectors, pendingCollectors, flaggedPickups, averageRating, ratings.size());
     }
 
     private List<Bucket> buckets(List<PickupRequest> done, Function<PickupRequest, String> key) {

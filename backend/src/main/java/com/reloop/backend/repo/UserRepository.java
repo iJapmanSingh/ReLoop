@@ -21,4 +21,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findForUpdate(@Param("id") Long id);
 
     List<User> findByRoleAndDeliveryPartnerTrueAndVerifiedTrueAndPincode(Role role, String pincode);
+
+    List<User> findByRoleOrderByNameAsc(Role role);
 }

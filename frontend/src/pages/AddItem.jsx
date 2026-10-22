@@ -49,7 +49,7 @@ export default function AddItem() {
           <div><label className="label">Description *</label>
             <textarea className="input h-24" required maxLength={1000} value={f.description} onChange={set('description')} placeholder="Won't power on. Battery no longer holds charge…" /></div>
           {err && <p className="text-sm text-red-700 bg-red-50 rounded-lg px-3 py-2">{err}</p>}
-          <button className="btn w-full" disabled={busy}>{busy ? 'Saving…' : 'Save item & get AI advice'}</button>
+          <button className="btn w-full" disabled={busy}>{busy ? 'Saving…' : 'Save item & get safety advice'}</button>
           <p className="text-xs text-muted">Your item is saved before advice is generated. No pickup is booked yet.</p>
         </form>
         <div className="space-y-4">

@@ -38,6 +38,13 @@ public class PickupController {
     @PreAuthorize("hasRole('CITIZEN')")
     public PickupDto cancel(@AuthenticationPrincipal User u, @PathVariable Long id) { return service.cancel(u, id); }
 
+    /** Citizen rates a recycled pickup and can report a problem for an admin to review. */
+    @PostMapping("/{id}/feedback")
+    @PreAuthorize("hasRole('CITIZEN')")
+    public PickupDto feedback(@AuthenticationPrincipal User u, @PathVariable Long id, @Valid @RequestBody FeedbackRequest r) {
+        return service.feedback(u, id, r);
+    }
+
     // collector
     @GetMapping("/available")
     @PreAuthorize("hasRole('COLLECTOR')")
@@ -58,7 +65,7 @@ public class PickupController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('COLLECTOR')")
     public PickupDto status(@AuthenticationPrincipal User u, @PathVariable Long id, @Valid @RequestBody StatusUpdate s) {
-        return service.updateStatus(u, id, s.status());
+        return service.updateStatus(u, id, s);
     }
 
     // any logged-in user; the service decides what this viewer may see
